@@ -1,0 +1,59 @@
+from ultralytics import YOLO
+import cv2
+
+# Load the YOLOv8 model for player detection (assuming 'yolov8n.pt' contains the weights trained for player detection)
+model = YOLO('yolov8n.pt')
+
+# Path to input video
+input_video_path = 'video.mp4'  # Replace with your video file
+output_video_path = 'output_video.mp4'  # Replace with desired output path
+
+# Open the input video
+cap = cv2.VideoCapture(input_video_path)
+
+# Get video properties
+fps = int(cap.get(cv2.CAP_PROP_FPS))
+width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+# Define the codec and create a VideoWriter for saving the output
+fourcc = cv2.VideoWriter_fourcc('mp4v')
+out = cv2.VideoWriter(output_video_path, fourcc, fps, (width, height))
+
+# Process each frame in the video
+while cap.isOpened()
+    ret, frame = cap.read()
+    if not ret
+        break
+
+    # Run YOLOv8 model to detect players
+    results = model(frame)
+
+    # Annotate the frame with detected bounding boxes
+    for result in results
+        boxes = result.boxes  # Get all detected boxes
+        for box in boxes
+            # Extract box coordinates and confidence score
+            x1, y1, x2, y2 = map(int, box.xyxy[0])  # Bounding box coordinates
+            confidence = box.conf[0]  # Confidence score
+            class_id = int(box.cls[0])  # Class ID (0 usually corresponds to 'player' if model is trained for players)
+
+            # Draw bounding box and label
+            label = f{model.names[class_id]} {confidence.2f}
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+    # Write the annotated frame to the output video
+    out.write(frame)
+
+    # Display the frame (optional, remove if you don't need to see real-time results)
+    cv2.imshow('YOLOv8 Player Detection', frame)
+    if cv2.waitKey(1) & 0xFF == ord('q')  # Press 'q' to stop early
+        break
+
+# Release resources
+cap.release()
+out.release()
+cv2.destroyAllWindows()
+
+print(fVideo processing complete. The output video is saved at {output_video_path})
